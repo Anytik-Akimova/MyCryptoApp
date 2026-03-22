@@ -1,0 +1,74 @@
+<div class="main_container">
+    <header>
+        <h1>MyCryptoApp</h1>
+        <button *ngIf="blockchain.user()" (click)="onLogout()" class="btn-exit">
+            Вийти
+        </button>
+    </header>
+    <div class="auth-card">
+        <section>
+            <h3>Вхід за ключем</h3>
+            <input [(ngModel)]="privateKeyInput" placeholder="Ваш Private Key">
+            <button (click)="onLogin()">Увійти</button>
+        </section>
+        <div class="divider">або</div>
+        <section>
+            <h3>Новий гаманець</h3>
+            <input [(ngModel)]="username" placeholder="Придумайте ім'я">
+            <button (click)="onRegister()">Створити гаманець</button>
+        </section>
+    </div>
+
+    <div class="dasboard" *ngIf="blockchain.user()">
+        <div class="user-info">
+            <h2>Вітаємо, {{blockchain.user().username}}!</h2>
+            <p>
+                Адреса: <code>{{ blockchain.user().address }}</code>
+            </p>
+            <div class="balance">
+                Баланс: {{ blockchain.user().balance }} ETH
+            </div>
+        </div>
+
+        <div class="actions">
+            <div class="card">
+                <h3>Відправити монети</h3>
+
+                <input [(ngModel)]="recipientAddress" placeholder="Адреса отримувача">
+                <input [(ngModel)]="amountToSend" type="number" placeholder="Сума..." min="0">
+                <button (click)="onSend()">Підписати та відправити</button>
+            </div>
+            <div class="card">
+                <h3>Майнінг</h3>
+                <p>
+                    Підтверджуйте транзакції та отримуйте винагороду +0.01 ETH
+                </p>
+                <button (click)="onMine()" [disabled]="ismining">
+                    {{ismining ? 'Обчислення...' : 'Запустити майнінг'}}
+
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <h3>Blockchain Explorer</h3>
+    <div class="chain-list">
+        <div *ngFor="let block of blockchain.chain()" class="block-card">
+            <div class="block-header">
+                Блок № {{ block.index }}
+            </div>
+
+            <div class="block-body">
+                <p>
+                    Власний хеш: <code>{{ block.hash }}</code>
+                </p>
+                <p>
+                    Попередній хеш: <code>{{ block.previousHash }}</code>
+                </p>
+                <p>
+                    Nonce:{{ block.proof }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
