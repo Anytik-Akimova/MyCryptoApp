@@ -9,7 +9,7 @@ from fastapi import FastAPI, Depends, HTTPException  # помилки в http з
 from sqlalchemy.orm import Session  # взаємодія з бдб session - db.context
 from fastapi.middleware.cors import CORSMiddleware #тестування роботи бек і фронтенду
 
-from database import SessionLocal, DBUser, DBBlock, DBTransaction, Base, engine  # імпорт моделей та сесії з бази даних
+from database import SessionLocal, DBUser, DBBlock, DBTransaction, DBUserContacts, Base, engine  # імпорт моделей та сесії з бази даних
 
 Base.metadata.create_all(bind=engine)  
 
@@ -147,6 +147,73 @@ def mine(miner_address: str, db: Session = Depends(get_db)):
 @app.get('/chain')
 def get_chain(db: Session = Depends(get_db)):
     return db.query(DBBlock).all()
+
+
+@app.post('/add_contact')
+def add_contact(owner_address: str, future_contact_address: str, nickname: str, db: Session = Depends(get_db)):
+    
+    # 1. Перевірка існування самого юзера
+    owner = db.query(DBUser).filter(DBUser.address == owner_address).first()
+    if not owner:
+        raise HTTPException(status_code=404, detail="Неіснуючий юзер")
+
+    # 2. Перевірка існування майбутнього контакта
+    future_contact_user = db.query(DBUser).filter(DBUser.address == future_contact_address).first()
+    if not future_contact_user:
+        raise HTTPException(status_code=403, detail="Такого користувача не існує")
+
+    # 3. Не можна додати самого себе
+    if owner_address == future_contact_address:
+        raise HTTPException(status_code=402, detail="Ви не можете додати самого себе в контакти")
+
+    # 4. Перевірка, чи не додали ми його вже раніше
+    existing_contact = db.query(DBUserContacts).filter(
+        DBUserContacts.owner_id == owner.id,
+        DBUserContacts.address == future_contact_address
+    ).first()
+    
+    if existing_contact:
+        raise HTTPException(status_code=401, detail="Цей контакт вже є у вашому списку")
+
+
+    # 5. Yовий запис
+    new_contact = DBUserContacts(
+        owner_id=owner.id,
+        nickname=nickname,  
+        address=future_contact_address
+    )
+
+    db.add(new_contact)
+    db.commit()
+
+    all_contacts = db.query(DBUserContacts).filter(DBUserContacts.owner_id == owner.id).all()
+    
+    return {
+        "message": f"Контакт {nickname} успішно доданий!",
+        "all contacts": all_contacts,   
+        }
+
+
+
+@app.get('/contacts')
+def get_user_contacts(private_key: str,db: Session = Depends(get_db)):
+    user = db.query(DBUser).filter(DBUser.private_key == private_key).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Ключ невірний!")
+    try:
+        response = db.query(DBUserContacts).filter(DBUserContacts.owner_id == user.id).all()
+        if response != 0:
+            return response
+        else:
+            return {
+                'message': 'There are no any contacts'
+            }
+    except Exception as ex:
+        return {
+            'Exception': f'{ex}'
+        }
+
+
 
 @app.get('/')
 def init_test():

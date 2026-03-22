@@ -49,6 +49,20 @@ export class Blockchain {
     return this.http.post(`${this.apiUrl}/mine?miner_address=${address}`, {})
   }
 
+  public get_user_contacts() {
+    const privateKey = this.user().privateKey;
+    return this.http.get(`${this.apiUrl}/contacts?private_key=${privateKey}`);
+  }
+
+
+  public addContact(nickname: string, contact_address: string) {
+    const payload = {
+      owner_address: this.user().address,
+      future_contact_address: contact_address,
+      nickname: nickname
+    };
+    return this.http.post(`${this.apiUrl}/add_contact`, payload);
+  }
 
   public sendTransaction(recipient: string, amount: number) {
     const privateKey = this.user().privateKey;

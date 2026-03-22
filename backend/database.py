@@ -24,6 +24,8 @@ class DBUser(Base):
     private_key = Column(String, unique=True)          # Унікальний приватний ключ для підпису транзакцій
     balance = Column(Float, default=100.0)
 
+    my_contacts = relationship("DBUserContacts", back_populates="owner")  # Для контактів зв'язок
+
 
 class DBBlock(Base):
     ''' Модель блоку транзакцій'''
@@ -49,6 +51,18 @@ class DBTransaction(Base):
     signature = Column(String)
     block_id = Column(Integer, ForeignKey("blocks.id")) # Зовнішній ключ для зв'язку з блоком
     block = relationship("DBBlock", back_populates="transactions") # Встановлення зв'язку з блоком
+
+
+class DBUserContacts(Base):
+    ''' Модель контактів юзера '''
+    __tablename__ = "userContacts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    owner_id = Column(Integer, ForeignKey("users.id")) # Юзер, який додав контакт до себе
+    nickname = Column(String)                          # Як він підписав контакт (мама, брат)
+    address = Column(String)                           
+
+    owner = relationship("DBUser", back_populates="my_contacts")
 
 
 # Base.metadata.create_all(bind=engine)  # Створення таблиць в базі даних на основі описаних моделей
